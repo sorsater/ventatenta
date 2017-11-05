@@ -42,7 +42,7 @@ TIME_END = datetime.time(18, 0)
 # Login credentials
 if len(sys.argv) >= 2:
     try:
-        user = __import__(sys.argv[1])
+        user = __import__(sys.argv[1].replace('.py', ''))
         LOGIN_NAME = user.name
         LOGIN_DATA = user.data
         MAIL = user.mail
@@ -170,9 +170,8 @@ notify_user('Startup {0}, {1} \n kurser: {2}'.format(time.strftime('%X'), LOGIN_
 pushed_today = False
 while True:
     now = datetime.datetime.now().time()
-    s_print('')
     s_print(LOGIN_NAME)
-    s_print('Now: {}'.format(time.strftime('%X')))
+    s_print('Now: {}'.format(time.strftime('%c')))
 
     # During the day
     if TIME_START <= now <= TIME_END:
@@ -223,6 +222,6 @@ while True:
         pushed_today = False
 
     for i in range(SLEEP_TIME):
-        print('Sleeping for {} seconds'.format(SLEEP_TIME-i), end='\r')
+        print('\033[KSleeping for {} seconds'.format(SLEEP_TIME-i), end='\r')
         time.sleep(1)
-    print()
+    print('\033[K')
