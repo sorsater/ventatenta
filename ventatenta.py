@@ -15,6 +15,7 @@ import smtplib # email
 import multiprocessing
 
 PORTALEN = 'https://www3.student.liu.se'
+s_print(LOGIN_RESULT)
 URL_LOGIN = 'https://www3.student.liu.se/portal/login'
 
 cj = http.cookiejar.CookieJar()
@@ -33,7 +34,7 @@ LOGIN_RESULT = ''
 
 # Logging
 LOG_FILENAME = 'ventatenta.log'
-logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG)
+logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG, format='%(asctime)s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
 # Times to poll between
 TIME_START = datetime.time(7, 30)
@@ -132,20 +133,43 @@ def get_url():
         for font in soup.find_all('font', text=True):
             if font.text.lstrip() == 'Studieresultat':
                 LOGIN_RESULT = PORTALEN + font.parent['href']
-                s_print('Success')
+                s_print(LOGIN_RESULT)
+                s_print('Login Success')
                 break
         else:
-            s_print('Fail')
+            s_print('Login Fail')
     except Exception as e:
         s_print('Get URL failed')
         s_print(e)
 
 # Parse page for results
 def ventatenta(url_resultat):
+    s_print('URL:' + url_resultat)
     result = []
     resp = urlopen(url_resultat)
     soup = BeautifulSoup(resp.read(), 'html.parser')
-    content = soup.find('table', {'class': 'resultlist'})
+
+    try:
+        content = soup.find('table', {'class': 'resultlist'})
+    except:
+        s_print('no content found...')
+        s_print(soup)
+        return result
+
+    if not content:
+        s_print('no resultlist found...')
+        s_print('content')
+        s_print(content)
+        s_print('soup')
+        s_print(soup)
+        return result
+
+    try:
+        hej = content.find_all('tr')
+    except:
+        s_print('no trs found')
+        s_print(content)
+        return result
 
     for tr in content.find_all('tr'):
         links = tr.find('a')
@@ -174,12 +198,12 @@ while True:
     s_print('Now: {}'.format(time.strftime('%c')))
 
     # During the day
+    TIME_START = datetime.time(7, 30)
+    TIME_END = datetime.time(7, 45)
     if TIME_START <= now <= TIME_END:
-        # Start with push to ensure app not crashed
-        if not pushed_today:
-            pushed_today = True
-            notify_user('Snurrar fortfarande. Antal kurser: {}'.format(len(prev_result))) # Comment this line to disable daily notification
+        notify_user('Snurrar fortfarande. Antal kurser: {}'.format(len(prev_result)))
 
+    if True:
         # multiprocessing to catch timeout in logging in
         login = multiprocessing.Process(target=get_url)
         login.start()
@@ -190,9 +214,13 @@ while True:
             print('Login timed out :(')
             login.terminate()
             login.join()
+            continue
+        else:
+            print('login worked')
 
         # Page stored in LOGIN_RESULT
         if len(LOGIN_RESULT) == 0:
+            s_print('len of login == 0')
             continue
 
         # Parse out results from page
@@ -215,11 +243,8 @@ while True:
             prev_result = result[:]
         except Exception as e:
             s_print('Parsing of page failed')
+            s_print(e)
             print(e)
-
-    # During evening and night
-    else:
-        pushed_today = False
 
     for i in range(SLEEP_TIME):
         print('\033[KSleeping for {} seconds'.format(SLEEP_TIME-i), end='\r')
