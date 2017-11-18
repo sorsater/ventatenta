@@ -15,7 +15,6 @@ import smtplib # email
 import multiprocessing
 
 PORTALEN = 'https://www3.student.liu.se'
-s_print(LOGIN_RESULT)
 URL_LOGIN = 'https://www3.student.liu.se/portal/login'
 
 cj = http.cookiejar.CookieJar()
